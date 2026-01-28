@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpieza</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <style>
+        .hero-image {
+            height: 400px;
+            object-fit: cover;
+        }
+        @media (max-width: 991px) {
+            .hero-image {
+                height: 280px; /* 30% menos que 400px */
+            }
+        }
+        .navbar-nav .nav-link {
+            padding: 0.5rem 0.3125rem; /* 5px = 0.3125rem */
+            font-size: 0.8rem;
+        }
+        @media (max-width: 576px) {
+            .navbar-nav .nav-link {
+                font-size: 0.85rem;
+                font-weight: 400;
+                padding: 0.5rem 0.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark bg-dark sticky-top navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand d-lg-none" href="#">Menú</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav w-100 justify-content-start">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Discursos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="predicacion.html">Predicación</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="limpieza.html">Limpieza</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="asignaciones.html">Asignaciones</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Audio-video.html">Aud y Vid</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="position-relative overflow-hidden mb-5">
+    <img src="assets/images/limpieza.svg" class="w-100 hero-image" alt="Elementos de limpieza" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/1600x400?text=Limpieza'; console.warn('Hero image failed, using fallback');">
+        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.45);">
+            <h1 class="display-2 text-white fw-bold">Limpieza</h1>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="container my-5">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Familia</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBodyLimpieza">
+                    <!-- Los datos se cargarán dinámicamente aquí -->
+                </tbody>
+            </table>
+            <div id="loadingLimp" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets API (Limpieza) -->
+    <script>
+        // Helper para escapar HTML y prevenir XSS
+        function escapeHtml(str){
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ID de la hoja de Google Sheets (solo el ID, p. ej. '1cenbEEw_QskFr0b2OlglTEBh_b4gRfR7lOAYoH3ihlg')
+            // Si pegaste la URL completa, asegúrate de copiar solo la parte entre '/d/' y '/edit'
+            const SPREADSHEET_ID = '1cenbEEw_QskFr0b2OlglTEBh_b4gRfR7lOAYoH3ihlg';
+            // GID de la hoja específica (extraído de la URL: gid=1673607348)
+            const SHEET_ID = '1673607348';
+
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&tq&gid=${SHEET_ID}`;
+
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    try {
+                        const jsonData = JSON.parse(data.substr(47).slice(0, -2));
+                        const rows = jsonData.table.rows || [];
+                        const tableBody = document.getElementById('tableBodyLimpieza');
+                        document.getElementById('loadingLimp').style.display = 'none';
+
+                        if (rows.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="2" class="text-center">No hay datos</td></tr>';
+                            return;
+                        }
+
+                        function cellString(cell) {
+                            if (!cell) return '';
+                            return (cell.f !== undefined && cell.f !== null) ? cell.f : (cell.v !== undefined && cell.v !== null ? cell.v : '');
+                        }
+
+                        rows.forEach(row => {
+                            const cells = row.c || [];
+                            const tr = document.createElement('tr');
+                                // Asumimos columnas en este orden: Fecha, Familia
+                                tr.innerHTML = `
+                                    <td>${escapeHtml(cellString(cells[0]))}</td>
+                                    <td>${escapeHtml(cellString(cells[1]))}</td>
+                                `;
+                                tableBody.appendChild(tr);
+                        });
+                    } catch (err) {
+                        console.error('Error parseando datos:', err);
+                        document.getElementById('loadingLimp').innerHTML = 'Error al procesar los datos';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar los datos:', error);
+                    const loadingEl = document.getElementById('loadingLimp');
+                    if (loadingEl) {
+                        loadingEl.innerHTML = '<div class="alert alert-danger">Error al cargar los datos. Verifica que la hoja esté publicada.</div>';
+                    }
+                });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

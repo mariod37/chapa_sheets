@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programa para la reunión de entre semana</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .section-title {
+      color: white;
+      padding: 8px 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 20px;
+    }
+    .gris { background-color: #4d4d4d; }
+    .dorado { background-color: #c59f36; }
+    .burdeos { background-color: #7c0c27; }
+    .hora {
+      width: 60px;
+      font-weight: bold;
+      color: #4d4d4d;
+    }
+    .rol {
+      text-align: right;
+      color: #555;
+    }
+    @media (max-width: 768px) {
+      .rol {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="hero">
+      <h2>Programa para la reunión de entre semana</h2>
+      <p><strong>17–23 de Noviembre</strong><br>El Cantar de los Cantares 6-8<br><small>Presidente y oración: Jose G.</small></p>
+    </div>
+
+    <div id="programme-container">
+      <!-- Aquí se inyectará el contenido desde Sheets -->
+    </div>
+  </div>
+
+  <script>
+    async function loadProgramme() {
+      const SPREADSHEET_ID = '1cenbEEw_QskFr0b2OlglTEBh_b4gRfR7lOAYoH3ihlg';
+      const SHEET_GID = '1521408178';
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&tq&gid=${SHEET_GID}`;
+
+      try {
+        const res = await fetch(url);
+        const txt = await res.text();
+        const json = JSON.parse(txt.substring(47).slice(0, -2));
+        const cols = json.table.cols.map(c => c.label.trim());
+        const rows = json.table.rows;
+
+        const container = document.getElementById('programme-container');
+        container.innerHTML = '';
+
+        // Suponiendo que la hoja tiene una estructura como:
+        // Hora | Texto | Rol
+        // y que separas por secciones manualmente o por una columna “sección”
+        // Aquí un ejemplo sencillo:
+        rows.forEach(r => {
+          const hora = r.c[0]?.v || '';
+          const texto = r.c[1]?.v || '';
+          const rol = r.c[2]?.v || '';
+
+          const tr = document.createElement('div');
+          tr.classList.add('row', 'mb-2');
+          tr.innerHTML = `
+            <div class="col-2 hora">${hora}</div>
+            <div class="col-7">${texto}</div>
+            <div class="col-3 rol">${rol}</div>
+          `;
+          container.appendChild(tr);
+        });
+
+      } catch (err) {
+        console.error('Error cargando programa:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProgramme);
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

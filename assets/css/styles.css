@@ -1,0 +1,44 @@
+/* Estilos generales */
+.table {
+    font-size: 1rem; /* Tamaño base para escritorio */
+}
+
+/* Estilos para títulos */
+.display-2 {
+    font-size: 4.2rem; /* Tamaño base más grande para escritorio */
+    font-weight: 700; /* Hacerlo un poco más bold para mejor visibilidad */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3); /* Sombra sutil para mejor legibilidad */
+}
+
+/* Media queries para dispositivos móviles */
+@media (max-width: 768px) {
+    .table {
+        font-size: 0.9rem; /* Tamaño ligeramente más pequeño pero legible en móviles */
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem; /* Padding reducido en móviles */
+    }
+    
+    .display-2 {
+        font-size: 3rem; /* Título más grande en móviles pero aún manejable */
+    }
+    
+    /* Mejora para tablas responsive en móviles */
+    .table-responsive {
+        margin-bottom: 1rem;
+        -webkit-overflow-scrolling: touch; /* Mejor scroll en iOS */
+    }
+}
+
+/* Estilos para pantallas muy pequeñas */
+@media (max-width: 576px) {
+    .table {
+        font-size: 0.85rem; /* Aún más pequeño para pantallas muy pequeñas */
+    }
+    
+    .display-2 {
+        font-size: 2rem;
+    }
+}
