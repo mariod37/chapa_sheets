@@ -3,7 +3,11 @@
 
 // Registrar Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js')
+  // Calcular la ruta base para que funcione tanto en local como en GitHub Pages
+  const swPath = (location.pathname.endsWith('/') 
+    ? location.pathname 
+    : location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1)) + 'service-worker.js';
+  navigator.serviceWorker.register(swPath)
     .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
     .catch(err => console.warn('⚠️ Error al registrar Service Worker:', err));
 }

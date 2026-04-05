@@ -1,15 +1,22 @@
 // Service Worker para soporte offline
-const CACHE_NAME = 'chapa-sheets-v1';
+const CACHE_NAME = 'chapa-sheets-v2';
+
+// Obtener la ruta base del service worker (funciona en local y GitHub Pages)
+const BASE_PATH = self.location.pathname.substring(0, self.location.pathname.lastIndexOf('/') + 1);
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/predicacion.html',
-  '/limpieza.html',
-  '/asignaciones.html',
-  '/Audio-video.html',
-  '/vida-ministerio.html',
-  '/assets/css/styles.css',
-  '/assets/js/offline-support.js',
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + 'predicacion.html',
+  BASE_PATH + 'limpieza.html',
+  BASE_PATH + 'asignaciones.html',
+  BASE_PATH + 'Audio-video.html',
+  BASE_PATH + 'vida-ministerio.html',
+  BASE_PATH + 'vida-ministerio1.html',
+  BASE_PATH + 'vida-ministerio2.html',
+  BASE_PATH + 'vida-ministerio3.html',
+  BASE_PATH + 'assets/css/styles.css',
+  BASE_PATH + 'assets/js/offline-support.js',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'
 ];
