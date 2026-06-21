@@ -121,7 +121,10 @@
             // Actualizado a la nueva hoja proporcionada por el usuario
             const SHEET_ID = '1474513997';
 
-            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&tq&gid=${SHEET_ID}`;
+            // Usar el nombre de la hoja en el parámetro `range` evita confusiones con gid
+            const SHEET_NAME = 'Limpieza';
+            const range = encodeURIComponent(`${SHEET_NAME}!A:B`);
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&tq=&range=${range}`;
 
             fetch(url)
                 .then(response => response.text())
