@@ -1,5 +1,5 @@
 // Service Worker para soporte offline
-const CACHE_NAME = 'chapa-sheets-v3';
+const CACHE_NAME = 'chapa-sheets-v4';
 
 // Obtener la ruta base del service worker (funciona en local y GitHub Pages)
 const BASE_PATH = self.location.pathname.substring(0, self.location.pathname.lastIndexOf('/') + 1);
