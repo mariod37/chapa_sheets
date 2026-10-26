@@ -155,46 +155,27 @@
     .cancion {
       font-weight: 600;
     }
+    .week-pills {
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .week-pills .nav-link {
+      border: 1px solid #c9c9c9;
+      background: #fff;
+      color: #333;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 999px;
+    }
+    .week-pills .nav-link.active {
+      background: #7c0c27;
+      border-color: #7c0c27;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-dark bg-dark sticky-top navbar-expand-lg">
-    <div class="container-fluid">
-      <a class="navbar-brand d-lg-none" href="#">Menú</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNavDropdown">
-        <ul class="navbar-nav w-100 justify-content-start">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">Discursos</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="predicacion.html">Predicación</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="limpieza.html">Limpieza</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="asignaciones.html">Asignaciones</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="Audio-video.html">Aud y Vid</a>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Vida y Min</a>
-            <ul class="dropdown-menu dropdown-menu-dark">
-              <li><a class="dropdown-item active" href="vida-ministerio.html">Vida y Min</a></li>
-              <li><a class="dropdown-item" href="vida-ministerio1.html">Vida y Min 1</a></li>
-              <li><a class="dropdown-item" href="vida-ministerio2.html">Vida y Min 2</a></li>
-              <li><a class="dropdown-item" href="vida-ministerio3.html">Vida y Min 3</a></li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+  <script src="assets/js/menu.js"></script>
 
   <!-- Título -->
   <div class="container mt-4">
@@ -209,6 +190,7 @@
       <div id="offline-warning" class="alert alert-warning" style="display:none;">
         📡 Modo sin conexión. Mostrando última versión guardada.
       </div>
+      <div id="week-tabs" class="mb-3"></div>
       <div id="header-container">
         <!-- Header dinámico se cargará aquí -->
       </div>
@@ -232,32 +214,128 @@
     }
 
     const SPREADSHEET_ID = '1cenbEEw_QskFr0b2OlglTEBh_b4gRfR7lOAYoH3ihlg';
-    const SHEET_GID = '1465351444';
-    const URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&tq&gid=${SHEET_GID}`;
-    const STORAGE_KEY = 'vida-ministerio-data';
+    // Pestañas (una por semana). Para sumar una pestaña más, agregá su gid a esta lista.
+    // Quien carga NO necesita tocar esto: alcanza con reemplazar el contenido de la pestaña
+    // de la semana que ya pasó por la semana nueva.
+    const SHEET_GIDS = ['1465351444', '323922141', '1157742617', '483034588'];
+    const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+    function normText(s) {
+      return (s || '').toString().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+    }
+
+    // "13-19 DE ABRIL", "27 DE OCTUBRE-2 DE NOVIEMBRE", "27-2 DE NOVIEMBRE" -> Date del primer día (o null)
+    function parseWeekStart(label, today) {
+      const t = normText(label);
+      const re = new RegExp('(\\d{1,2})(?:\\s*(?:de\\s+)?(' + MONTHS.join('|') + '))?', 'g');
+      const pairs = [];
+      let m;
+      while ((m = re.exec(t)) !== null) {
+        pairs.push({ day: parseInt(m[1], 10), month: m[2] ? MONTHS.indexOf(m[2]) : null });
+      }
+      if (!pairs.length) return null;
+      const first = pairs[0], last = pairs[pairs.length - 1];
+      let month = first.month !== null ? first.month : last.month;
+      if (month === null) return null;
+      if (first.month === null && pairs.length > 1 && first.day > last.day) month = (month + 11) % 12;
+      let best = null;
+      [-1, 0, 1].forEach(function (dy) {
+        const d = new Date(today.getFullYear() + dy, month, first.day);
+        if (best === null || Math.abs(d - today) < Math.abs(best - today)) best = d;
+      });
+      return best;
+    }
+
+    function titleCase(s) {
+      s = (s || '').toLowerCase();
+      return s.replace(/(^|\s|-)([a-záéíóúñ])/g, function (_, a, b) { return a + b.toUpperCase(); }).replace(/\sDe\s/g, ' de ');
+    }
+
+    let weeks = [];
+    let selected = 0;
 
     async function loadProgramme() {
-      try {
-        // Usar función helper fetchWithOfflineSupport desde offline-support.js
-        const result = await fetchWithOfflineSupport(URL, STORAGE_KEY);
-        processData(result.data);
-        
-        if (result.fromCache) {
-          document.getElementById('offline-warning').style.display = 'block';
-        } else {
-          document.getElementById('offline-warning').style.display = 'none';
-        }
-      } catch (err) {
-        console.error('❌ Error cargando datos:', err);
-        document.getElementById('programme-body').innerHTML = 
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const results = await Promise.allSettled(SHEET_GIDS.map(function (gid) {
+        const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&tq&gid=${gid}`;
+        return fetchWithOfflineSupport(url, 'vida-ministerio-gid-' + gid);
+      }));
+
+      let anyCache = false;
+      const loaded = [];
+      results.forEach(function (r) {
+        if (r.status !== 'fulfilled') return;
+        if (r.value.fromCache) anyCache = true;
+        const hc = document.createElement('div');
+        const pb = document.createElement('div');
+        processData(r.value.data, hc, pb);
+        const h2 = hc.querySelector('h2');
+        const label = h2 ? h2.textContent.trim() : '';
+        if (!label && !pb.textContent.trim()) return; // pestaña vacía
+        loaded.push({ label: label, start: parseWeekStart(label, today), hc: hc.innerHTML, pb: pb.innerHTML });
+      });
+
+      document.getElementById('offline-warning').style.display = anyCache ? 'block' : 'none';
+
+      if (!loaded.length) {
+        document.getElementById('programme-body').innerHTML =
           '<div class="alert alert-danger">❌ No hay conexión y no hay datos guardados. Conéctate a internet para cargar los datos.</div>';
+        return;
       }
+
+      // Orden por fecha; las que no se pudieron leer van al final
+      loaded.sort(function (a, b) {
+        if (a.start && b.start) return a.start - b.start;
+        if (a.start) return -1;
+        if (b.start) return 1;
+        return 0;
+      });
+      // Se ocultan las semanas que ya terminaron (domingo = inicio + 6 días)
+      const upcoming = loaded.filter(function (w) {
+        if (!w.start) return true;
+        const end = new Date(w.start); end.setDate(end.getDate() + 6);
+        return end >= today;
+      });
+      weeks = upcoming.length ? upcoming : loaded.slice(-1);
+      weeks.forEach(function (w, i) {
+        const end = w.start ? new Date(w.start.getTime() + 6 * 86400000) : null;
+        w.isCurrent = !!(w.start && w.start <= today && end >= today);
+      });
+      const curIdx = weeks.findIndex(function (w) { return w.isCurrent; });
+      selected = curIdx >= 0 ? curIdx : 0;
+      renderTabs();
+      showWeek(selected);
     }
-    
+
+    function renderTabs() {
+      const box = document.getElementById('week-tabs');
+      if (weeks.length < 2) { box.innerHTML = ''; return; }
+      const curIdx = weeks.findIndex(function (w) { return w.isCurrent; });
+      box.innerHTML = '<div class="nav nav-pills week-pills">' + weeks.map(function (w, i) {
+        let name = titleCase(w.label) || ('Semana ' + (i + 1));
+        if (w.isCurrent) name = 'Esta semana';
+        else if (curIdx >= 0 && i === curIdx + 1) name = 'Próxima semana';
+        return '<button type="button" class="nav-link" data-week="' + i + '">' + escapeHtml(name) + '</button>';
+      }).join('') + '</div>';
+      box.querySelectorAll('button').forEach(function (b) {
+        b.addEventListener('click', function () { showWeek(parseInt(b.dataset.week, 10)); });
+      });
+    }
+
+    function showWeek(i) {
+      selected = i;
+      const w = weeks[i];
+      document.getElementById('header-container').innerHTML = w.hc;
+      document.getElementById('programme-body').innerHTML = w.pb;
+      document.querySelectorAll('#week-tabs .nav-link').forEach(function (b) {
+        b.classList.toggle('active', parseInt(b.dataset.week, 10) === i);
+      });
+    }
+
     // Alias para que offline-support.js pueda llamarla
     window.loadData = loadProgramme;
 
-    function processData(json) {
+    function processData(json, headerContainer, programmeBody) {
       try {
         let rows = json.table.rows;
         const headers = json.table.cols.map(col => col.label || col.id || '');
@@ -375,8 +453,6 @@
         console.log('  Extra:', extraIdx);
         console.log('📝 TOTAL DE FILAS:', rows.length);
 
-        const headerContainer = document.getElementById('header-container');
-        const programmeBody = document.getElementById('programme-body');
 
         let filasIgnoradas = 0;
         let filasProcesadas = 0;
@@ -519,12 +595,10 @@
         console.log(`  Header generado: ${headerContainer.innerHTML.length > 0 ? 'SÍ' : 'NO'}`);
         console.log(`  Body generado: ${programmeBody.innerHTML.length > 0 ? 'SÍ' : 'NO'}`);
         console.log(`  Longitud del bodyHTML: ${bodyHTML.length}`);
-        console.log('📄 HTML GENERADO:');
-        console.log(bodyHTML);
 
       } catch (err) {
         console.error('❌ Error procesando datos:', err);
-        document.getElementById('programme-body').innerHTML = 
+        programmeBody.innerHTML = 
           '<div class="alert alert-danger">Error al procesar los datos: ' + err.message + '</div>';
       }
     }
