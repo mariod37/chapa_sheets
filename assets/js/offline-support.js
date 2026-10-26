@@ -24,7 +24,10 @@ function createOnlineIndicator() {
     
     const container = navbar.querySelector('.container-fluid');
     if (container) {
-      container.appendChild(indicator);
+      // Junto al nombre de la sección, para no ocupar el lugar del menú
+      const brand = container.querySelector('.navbar-brand');
+      if (brand) brand.insertAdjacentElement('afterend', indicator);
+      else container.insertBefore(indicator, container.firstChild);
     }
   }
 }

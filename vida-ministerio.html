@@ -160,18 +160,26 @@
       flex-wrap: wrap;
     }
     .week-pills .nav-link {
-      border: 1px solid #c9c9c9;
+      --wk: #7c0c27;
+      border: 2px solid var(--wk);
       background: #fff;
-      color: #333;
-      font-weight: 600;
-      padding: 10px 16px;
+      color: var(--wk);
+      font-weight: 700;
+      padding: 10px 18px;
       border-radius: 999px;
+      transition: background .15s, color .15s;
     }
+    .week-pills .nav-link:hover { background: color-mix(in srgb, var(--wk) 12%, #fff); }
     .week-pills .nav-link.active {
-      background: #7c0c27;
-      border-color: #7c0c27;
+      background: var(--wk);
+      border-color: var(--wk);
       color: #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,.25);
     }
+    .week-pills .nav-link:nth-child(1) { --wk: #7c0c27; }
+    .week-pills .nav-link:nth-child(2) { --wk: #1f6f8b; }
+    .week-pills .nav-link:nth-child(3) { --wk: #2e7d4f; }
+    .week-pills .nav-link:nth-child(4) { --wk: #b36b00; }
   </style>
 </head>
 <body>
